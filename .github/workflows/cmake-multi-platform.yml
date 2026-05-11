@@ -20,28 +20,9 @@ jobs:
         apk add --no-cache \
           cmake \
           gcc \
-          make \
           musl-dev \
-          linux-headers \
-          git \
-          build-base \
-          libx11-dev \
-          libxext-dev \
-          libxrandr-dev \
-          libxrender-dev \
-          libxfixes-dev \
-          libxkbcommon-dev \
-          wayland-dev
-
-    - name: Build and install SDL3 from source
-      run: |
-        git clone --depth 1 --branch SDL3 https://github.com/libsdl-org/SDL.git
-        cd SDL
-        ./configure --prefix=/usr
-        make -j$(nproc)
-        make install
-        cd ..
-        rm -rf SDL
+          make \
+          sdl3-dev
 
     - name: Configure CMake
       run: cmake -B build -DCMAKE_BUILD_TYPE=Release -S .
@@ -49,8 +30,5 @@ jobs:
     - name: Build
       run: cmake --build build --config Release --parallel $(nproc)
 
-    - name: Run (optional smoke test)
-      run: |
-        # Just verify the binary exists and can start (headless? might need a dummy display)
-        # For a simple test, check that the binary is executable.
-        test -x build/sdl-xclock
+    - name: Verify binary exists
+      run: test -x build/sdl-xclock
