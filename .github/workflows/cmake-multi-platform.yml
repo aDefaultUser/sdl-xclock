@@ -1,4 +1,4 @@
-name: CMake on multiple platforms
+name: CMake on Alpine Linux
 
 on:
   push:
@@ -8,70 +8,49 @@ on:
 
 jobs:
   build:
-    runs-on: ${{ matrix.os }}
-
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, windows-latest]
-        build_type: [Release]
-        # Only use compilers that are guaranteed to work out-of-the-box
-        include:
-          - os: ubuntu-latest
-            c_compiler: gcc
-          - os: windows-latest
-            c_compiler: cl          # MSVC (via vcpkg + VS environment)
-
+    runs-on: ubuntu-latest
+    container:
+      image: alpine:latest
     steps:
     - uses: actions/checkout@v4
 
-    # ---------- Linux: install SDL3 from source ----------
-    - name: Install SDL3 (Ubuntu)
-      if: runner.os == 'Linux'
+    - name: Install build dependencies
       run: |
-        sudo apt-get update
-        sudo apt-get install -y build-essential cmake libwayland-dev libx11-dev libxext-dev libxrandr-dev libxrender-dev libxfixes-dev libxkbcommon-dev
+        apk update
+        apk add --no-cache \
+          cmake \
+          gcc \
+          make \
+          musl-dev \
+          linux-headers \
+          git \
+          build-base \
+          libx11-dev \
+          libxext-dev \
+          libxrandr-dev \
+          libxrender-dev \
+          libxfixes-dev \
+          libxkbcommon-dev \
+          wayland-dev
+
+    - name: Build and install SDL3 from source
+      run: |
         git clone --depth 1 --branch SDL3 https://github.com/libsdl-org/SDL.git
         cd SDL
         ./configure --prefix=/usr
         make -j$(nproc)
-        sudo make install
+        make install
         cd ..
-        sudo ldconfig
-
-    # ---------- Windows: install SDL3 via vcpkg ----------
-    - name: Setup vcpkg (Windows)
-      if: runner.os == 'Windows'
-      uses: lukka/run-vcpkg@v11
-      with:
-        vcpkgGitCommitId: 38dd44a56a269c75794a8268a679f87ff01bf47e   # Update as needed
-
-    - name: Install SDL3 via vcpkg (Windows)
-      if: runner.os == 'Windows'
-      run: vcpkg install sdl3:x64-windows
-      shell: cmd
-
-    # ---------- Common configuration ----------
-    - name: Set reusable strings
-      id: strings
-      shell: bash
-      run: |
-        echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
+        rm -rf SDL
 
     - name: Configure CMake
-      shell: bash
-      run: |
-        cmake -B ${{ steps.strings.outputs.build-output-dir }} \
-          -DCMAKE_C_COMPILER=${{ matrix.c_compiler }} \
-          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
-          ${{ runner.os == 'Windows' && '-DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake' || '' }} \
-          -S ${{ github.workspace }}
+      run: cmake -B build -DCMAKE_BUILD_TYPE=Release -S .
 
     - name: Build
-      run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
+      run: cmake --build build --config Release --parallel $(nproc)
 
-    # (Optional) No tests yet – remove or add if you implement ctest
-    - name: Test
-      if: false   # skip until tests are added
-      working-directory: ${{ steps.strings.outputs.build-output-dir }}
-      run: ctest --build-config ${{ matrix.build_type }}
+    - name: Run (optional smoke test)
+      run: |
+        # Just verify the binary exists and can start (headless? might need a dummy display)
+        # For a simple test, check that the binary is executable.
+        test -x build/sdl-xclock
