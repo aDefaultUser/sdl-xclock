@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(sdl-xclock)
+project(sdl-xclock C)
 
 find_package(SDL3 REQUIRED)
 
