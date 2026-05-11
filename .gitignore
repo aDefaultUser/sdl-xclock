@@ -1,0 +1,51 @@
+# Build directories
+build/
+*/build/
+out/
+*/out/
+
+# CMake generated files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+CMakeScripts/
+*.cmake
+!CMakeLists.txt
+
+# Compiled object files
+*.o
+*.obj
+*.ko
+*.dll
+*.exe
+*.dylib
+*.so
+*.out
+*.app
+
+# SDL‑specific (if you generate config headers or compile with pkg‑config)
+*-config.h
+*_config.h
+
+# Editor / IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.user
+*.userworkspace
+
+# OS generated files
+.DS_Store
+.DS_Store?
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Debug / release build subdirectories (common if you build in‑source)
+Debug/
+Release/
+MinSizeRel/
+RelWithDebInfo/
